@@ -7,9 +7,9 @@ apply plugin: 'kotlin-kapt'
 def nexusUID = System.getenv("CN_NEXUS_UID") ? System.getenv("CN_NEXUS_UID") : ""
 def nexusPWD = System.getenv("CN_NEXUS_PWD") ? System.getenv("CN_NEXUS_PWD") : ""
 
-def major = 2
+def major = 0
 def minor = 0
-def patch = 0
+def patch = 1
 def currentVersion = "${major}.${minor}.${patch}"
 
 android {
@@ -177,8 +177,8 @@ uploadArchives {
                 authentication(
                         userName: nexusUID,
                         password: nexusPWD)
-                pom.groupId = "com.coinninja.libbitcoin"
-                pom.artifactId = "libbitcoinbindings-release"
+                pom.groupId = "app.coinninja.cn.libbitcoin"
+                pom.artifactId = "cnlibbitcoin-release"
                 pom.version = currentVersion
             }
         }
