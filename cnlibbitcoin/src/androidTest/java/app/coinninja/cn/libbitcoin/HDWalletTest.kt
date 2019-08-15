@@ -9,7 +9,6 @@ class HDWalletTest {
     @Test
     fun generates_words() {
         assertThat(HDWallet.generateNewWords().size).isEqualTo(12)
-        assertThat(HDWallet.generateNewWords()).isEqualTo(arrayOf( "", "", "", "", "", "", "", "", "", "", "", ""))
     }
 
 
