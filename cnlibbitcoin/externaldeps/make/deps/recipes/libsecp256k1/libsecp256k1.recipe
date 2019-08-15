@@ -1,0 +1,28 @@
+inherit lib
+
+source="https://github.com/libbitcoin/secp256k1.git#9d560f99"
+
+build() {
+    # Optimize:
+    patch -p1 < $recipe_dir/optimize.patch
+	if [[ $build_type = "32bit" ]]
+    then
+		support_32bit="--with-bignum=no --with-field=32bit"
+    elif [[ $build_type = "64bit" ]]
+    then
+		support_32bit=""
+    fi
+
+    # Build:
+    autoreconf -i
+    #./configure --enable-static --disable-shared --enable-module-recovery --host=$cross --prefix=$install_dir \
+	./configure --enable-static --disable-shared --enable-module-recovery --host=$cross --prefix=$install_dir \
+        --disable-tests $support_32bit
+    make clean
+    make -j 4
+    make install
+}
+
+##include="include/secp256k1.h"
+include="include/*"
+lib="lib/libsecp256k1.a"

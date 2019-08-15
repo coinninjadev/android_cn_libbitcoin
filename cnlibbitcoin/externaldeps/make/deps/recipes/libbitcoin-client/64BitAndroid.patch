@@ -1,0 +1,15 @@
+diff --git a/src/dealer.cpp b/src/dealer.cpp
+index 66d99f4..2db697f 100644
+--- a/src/dealer.cpp
++++ b/src/dealer.cpp
+@@ -146,8 +146,8 @@ int32_t dealer::remaining(const asio::time_point& deadline)
+         remainder).count();
+ 
+     // Prevent overflow and underflow in the conversion to int32.
+-    const auto capped = std::min(count, maximum);
+-    const auto bounded = std::max(capped, minimum);
++    const auto capped = std::min<int32_t>(count, maximum);
++    const auto bounded = std::max<int32_t>(capped, minimum);
+     return static_cast<int32_t>(bounded);
+ }
+ 

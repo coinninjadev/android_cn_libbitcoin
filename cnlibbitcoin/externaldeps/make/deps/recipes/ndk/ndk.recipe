@@ -1,0 +1,77 @@
+# This recipe contains the setup tasks for unpacking and installing the NDK
+inherit common
+
+version="r13b"
+
+# Select the correct NDK version for the host system:
+case $(uname -sm) in
+"Linux x86_64")
+    system=linux-x86_64
+    source="https://dl.google.com/android/repository/android-ndk-$version-$system.zip#0600157c4ddf50ec15b8a037cfc474143f718fd0" ;;
+"Darwin x86_64")
+    system=darwin-x86_64
+    source="https://dl.google.com/android/repository/android-ndk-$version-$system.zip#71fe653a7bf5db08c3af154735b6ccbc12f0add5" ;;
+*)
+    echo "Unknown host platform!"
+    exit 1;;
+esac
+
+# Extracts a standalone toolchain from the NDK.
+# $1 arch name for installing the toolchain.
+# $2 NDK toolchain name.
+setup() {
+    
+    echo Unpacking NDK...
+    archive="$download_dir/android-ndk-$version-$system.zip"
+    unzip -o -d"$work_dir" $archive
+	
+	if [[ $1 = "arm" ]]
+    then
+		export ndk_install_dir="$work_dir/armeabi-v7a"
+		export min_android_api="14"
+    elif [[ $1 = "arm64" ]]
+    then
+		export ndk_install_dir="$work_dir/arm64-v8a"
+		export min_android_api="21"
+    elif [[ $1 = "x86_64" ]]
+    then
+		export ndk_install_dir="$work_dir/x86_64"
+		export min_android_api="21"
+    elif [[ $1 = "x86" ]]
+    then
+		export ndk_install_dir="$work_dir/x86"
+		export min_android_api="14"
+    else
+		export ndk_install_dir="$work_dir/$1"
+		export min_android_api="14"
+    fi
+	
+    echo Unpacking toolchain...
+    cd android-ndk-$version
+    python build/tools/make_standalone_toolchain.py --verbose --arch $1 --api $min_android_api --stl libc++ --force --install-dir $ndk_install_dir
+
+    echo Patching headers...
+    cat $recipe_dir/langinfo.h >> $ndk_install_dir/sysroot/usr/local/include/langinfo.h
+}
+setup_arm64v8a() {
+    setup arm64 aarch64-linux-android
+}
+setup_armeabiv7a() {
+    setup arm arm-linux-androideabi
+}
+setup_x64() {
+    setup x86_64 x86_64-linux-android
+}
+setup_x86() {
+    setup x86 x86
+}
+setup_mips() {
+    setup mips mipsel-linux-android
+}
+
+task setup-arm64v8a download
+task setup-armeabiv7a download
+task setup-x64 download
+task setup-x86 download
+task setup-mips download
+default=setup-armeabiv7a
