@@ -4,12 +4,13 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-kapt'
 
-def nexusUID = System.getenv("CN_NEXUS_UID") ? System.getenv("CN_NEXUS_UID") : ""
-def nexusPWD = System.getenv("CN_NEXUS_PWD") ? System.getenv("CN_NEXUS_PWD") : ""
+def nexusUID = System.getenv("CN_NEXUS_UID") ? System.getenv("CN_NEXUS_UID") : CN_NEXUS_UID
+def nexusPWD = System.getenv("CN_NEXUS_PWD") ? System.getenv("CN_NEXUS_PWD") : CN_NEXUS_PWD
 
-def major = 0
-def minor = 0
-def patch = 1
+
+def major = 1
+def minor = 2
+def patch = 8
 def currentVersion = "${major}.${minor}.${patch}"
 
 android {
@@ -64,6 +65,12 @@ android {
     }
 
     buildTypes {
+        customDebugType {
+            debuggable true
+        }
+        debug {
+            debuggable true
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
@@ -93,13 +100,13 @@ android {
         sourceCompatibility 1.8
         targetCompatibility 1.8
     }
+    buildToolsVersion = '29.0.2'
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'commons-codec:commons-codec:20041127.091804'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-
 
     androidTestImplementation "androidx.test.ext:junit:1.1.1"
     androidTestImplementation "androidx.test.ext:truth:1.2.0"
@@ -162,6 +169,56 @@ task libbitcoinStaticLibBuild_mips(type: Exec) {
     args "libbitcoin-client.build-android-mips"
 }
 
+task linkCache {
+    // TODO make recursive copy
+    def homeDir = System.getProperty("user.home")
+    println(homeDir)
+    mkdir("$homeDir/libbitcoin-build-cache")
+    mkdir("$homeDir/libbitcoin-build-cache/download")
+    mkdir("$homeDir/libbitcoin-build-cache/build")
+    mkdir("$homeDir/libbitcoin-build-cache/ndkBuild")
+    copy {
+        from "$homeDir/libbitcoin-build-cache/"
+        into "./cnlibbitcoin/externaldeps/make/deps"
+
+        include "build"
+        include "download"
+    }
+
+    copy {
+        from "$homeDir/libbitcoin-build-cache/"
+        into "./cnlibbitcoin/"
+
+        include "ndkBuild"
+    }
+
+}
+
+task cacheBuild {
+    // TODO make recursive copy
+    def homeDir = System.getProperty("user.home")
+    println(homeDir)
+    mkdir("$homeDir/libbitcoin-build-cache")
+    mkdir("$homeDir/libbitcoin-build-cache/download")
+    mkdir("$homeDir/libbitcoin-build-cache/build")
+    mkdir("$homeDir/libbitcoin-build-cache/ndkBuild")
+    copy {
+        from "./cnlibbitcoin/externaldeps/make/deps/"
+        into "$homeDir/libbitcoin-build-cache/"
+
+        include "build/**"
+        include "download/**"
+    }
+
+    copy {
+        from "./cnlibbitcoin/"
+        into "$homeDir/libbitcoin-build-cache/"
+
+        include "ndkBuild/**"
+    }
+
+}
+
 task assembleAll {
     dependsOn libbitcoinStaticLibBuild_x86, libbitcoinStaticLibBuild_x64, libbitcoinStaticLibBuild_armeabiv7a, libbitcoinStaticLibBuild_arm64v8a
 
@@ -186,8 +243,7 @@ uploadArchives {
 }
 
 repositories {
-    mavenCentral()
+    maven { url "https://nexus.coinninja.net/repository/maven-releases/" }
     google()
     jcenter()
-    maven { url "https://nexus.coinninja.net/repository/maven-releases/" }
 }

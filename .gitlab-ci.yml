@@ -1,4 +1,4 @@
-image: registry.coinninja.net/engineering/android-ndk:latest
+image: registry.coinninja.net/engineering/android-ndk:tooling-update
 
 stages:
   - build
@@ -7,19 +7,30 @@ stages:
 
 before_script:
   - export ANDROID_HOME=/sdk-tools
-  - export ANDROID_NDK_HOME=/opt/android-ndk/android-ndk-r19
+  - export ANDROID_NDK_HOME=/opt/android-ndk/android-ndk-r20
   - export PATH=$PATH:/sdk-tools/platform-tools/
   - export PATH=$PATH:$ANDROID_NDK_HOME
+  
+#cache:
+#  key: ${CI_PROJECT_ID}
+#  paths:
+#    - .gradle/
+#    - ./cnlibbitcoin/build
+#    - ./cnlibbitcoin/externaldeps/make/deps/build
+#    - ./cnlibbitcoin/externaldeps/make/deps/download
+#    - ./cnlibbitcoin/ndkBuild
+#    - ./cnlibbitcoin/.externalNativeBuild
 
 build:
   stage: build
+  except:
+    - /^[\d\.]+RC$/@cn/android_cn_libbitcoin
   script:
     - apt-get -y update
     - apt-get -y install autoconf automake cmake git libtool pkg-config protobuf-compiler clang astyle
     - apt-get -y install patch
-    - patch --version
-    - ./gradlew --version
-    - ./gradlew build --stacktrace
+    - apt-get -y install build-essential
+    - ./gradlew assembleAll assemble --stacktrace
   artifacts:
     name: "cnlibbitcoin.aar"
     when: on_success
@@ -28,19 +39,23 @@ build:
 
 instrumentedTest:
   stage: test
+  tags:
+    - android
   except:
     - branches
   script:
-    - ./gradlew connectedAndroidTest
+    - ./gradlew assembleAll assemble connectedAndroidTest
 
-createAAR:
+build_and_deploy:
   stage: deploy
+  tags:
+    - android
   only:
-    - /^[\d\.]+RC$/@cn/android-libbitcoin
+    - /^[\d\.]+RC$/@cn/android_cn_libbitcoin
   script:
     - apt-get -y update
     - apt-get -y install autoconf automake cmake git libtool pkg-config protobuf-compiler clang astyle
     - apt-get -y install patch
     - patch --version
-    - ./gradlew uploadArchives --stacktrace
+    - ./gradlew assembleAll assemble uploadArchives --stacktrace
 
