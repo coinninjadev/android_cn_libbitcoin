@@ -10,8 +10,6 @@
 /.idea/assetWizardSettings.xml
 .DS_Store
 /build
-/make/download
-/ndkBuild
 /captures
 .externalNativeBuild
 ndkBuild/

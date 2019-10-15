@@ -1,1 +1,1 @@
-include ':app', ':cnlibbitcoin'
+include ':cnlibbitcoin'
