@@ -30,7 +30,7 @@ build:
     - apt-get -y install autoconf automake cmake git libtool pkg-config protobuf-compiler clang astyle
     - apt-get -y install patch
     - apt-get -y install build-essential
-    - ./gradlew assembleAll assemble --stacktrace
+    - ./gradlew importCache assembleAll assemble createCache --stacktrace
   artifacts:
     name: "cnlibbitcoin.aar"
     when: on_success

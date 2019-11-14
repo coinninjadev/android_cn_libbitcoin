@@ -67,6 +67,11 @@ Java_app_coinninja_cn_libbitcoin_HDWallet_getAddressFor(JNIEnv *env, jobject ins
 
 
 JNIEXPORT jobject JNICALL
+Java_app_coinninja_cn_libbitcoin_HDWallet_encryptionKeysForM42(JNIEnv *env, jobject instance,
+                                                               jbyteArray _key, jint _network,
+                                                               jbyteArray _publicKey);
+
+JNIEXPORT jobject JNICALL
 Java_app_coinninja_cn_libbitcoin_HDWallet_encryptionKeys(JNIEnv *env, jobject instance,
                                                          jbyteArray _entropy,
                                                          jbyteArray _publicKey);
@@ -75,6 +80,10 @@ JNIEXPORT jobject JNICALL
 Java_app_coinninja_cn_libbitcoin_HDWallet_decryptionKeys(JNIEnv *env, jobject instance,
                                                          jbyteArray _key, jint _network,
                                                          jobject _path, jbyteArray _publicKey);
+JNIEXPORT jobject JNICALL
+Java_app_coinninja_cn_libbitcoin_HDWallet_decryptionKeysForM42(JNIEnv *env, jobject instance,
+                                                               jbyteArray _key, jint _network,
+                                                               jbyteArray _publicKey);
 
 JNIEXPORT jstring JNICALL
 Java_app_coinninja_cn_libbitcoin_HDWallet_base58encode(JNIEnv *env, jobject instance,

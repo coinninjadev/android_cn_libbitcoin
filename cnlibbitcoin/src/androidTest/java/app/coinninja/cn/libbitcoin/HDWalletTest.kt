@@ -69,9 +69,7 @@ class HDWalletTest {
     @Test
     fun test_getEncryptionKeys() {
         val wallet = HDWallet(words)
-        val hexString =
-            "04904240a0aaec6af6f9b6c331f71feea2a4ed1549c06e5a6409fe92c5824dc4c54e26c2b2e27cfc224a6b782b35a2872b666f568cf37456262fbb065601b4d73a"
-        val uncompressedPublicKey = hexString.hexToBytes()
+        val uncompressedPublicKey = "04904240a0aaec6af6f9b6c331f71feea2a4ed1549c06e5a6409fe92c5824dc4c54e26c2b2e27cfc224a6b782b35a2872b666f568cf37456262fbb065601b4d73a"
 
         val keys1: EncryptionKeys = wallet.encryptionKeys(uncompressedPublicKey)
         assertThat(keys1.encryptionKey.size).isEqualTo(32)
@@ -96,7 +94,6 @@ class HDWalletTest {
         assertThat(keys.hmacKey.toHexString()).isEqualTo("3726b40481842beddd888df1b60afc693d3334781c74664c1469a8b908d1d16f")
     }
 
-    @Ignore
     @Test
     fun test_encryption_and_decryption_keys_are_compatible() {
         val wallet = HDWallet(words)
@@ -106,7 +103,7 @@ class HDWalletTest {
 
         //sender builds encryption keys
         val encryptionKeys: EncryptionKeys =
-            wallet.encryptionKeys(uncompressedPublicKey.toByteArray())
+            wallet.encryptionKeys(uncompressedPublicKey)
 
         //receiver builds decryption keys from ephemeral public key and derivationPath
         val decryptionKeys: DecryptionKeys =
@@ -141,7 +138,7 @@ class HDWalletTest {
     fun generates_address_from_path_test_net_purpose_84_chain_external() {
         val path = DerivationPath(84, 1, 0, 0, 0)
         val metaAddress = HDWallet(words, network = Network.TESTNET).getAddressForPath(path)
-        assertThat(metaAddress.address).isEqualTo("tb1q6rz28mcfaxtmd6v789l9rrlrusdprr9pqcpvkl")
+        assertThat(metaAddress.address).isEqualTo("bcrt1q6rz28mcfaxtmd6v789l9rrlrusdprr9pz3cppk")
         assertThat(metaAddress.pubKey).isEqualTo("04e7ab2537b5d49e970309aae06e9e49f36ce1c9febbd44ec8e0d1cca0b4f9c3196a8177238417b530160bf7ce4e02b931c9063d56be2efbc7d3d08b745224e928")
         assertThat(metaAddress.derivationPath).isEqualTo(path)
     }
@@ -159,7 +156,7 @@ class HDWalletTest {
     fun generates_address_from_path_test_net_purpose_84_chain_internal() {
         val path = DerivationPath(84, 1, 0, 1, 0)
         val metaAddress = HDWallet(words, network = Network.TESTNET).getAddressForPath(path)
-        assertThat(metaAddress.address).isEqualTo("tb1q9u62588spffmq4dzjxsr5l297znf3z6j5p2688")
+        assertThat(metaAddress.address).isEqualTo("bcrt1q9u62588spffmq4dzjxsr5l297znf3z6jkgnhsw")
         assertThat(metaAddress.pubKey).isEqualTo("")
         assertThat(metaAddress.derivationPath).isEqualTo(path)
     }
