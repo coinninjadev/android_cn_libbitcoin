@@ -1,6 +1,7 @@
 #include "binder.hpp"
 
 
+
 jint jint_from_field_name(JNIEnv *env, jobject obj, jclass clazz, const char *field_name) {
     jfieldID field = env->GetFieldID(clazz, field_name, "I");
     return env->GetIntField(obj, field);
@@ -80,7 +81,7 @@ uint64_t network_from(jint network) {
 }
 
 coinninja::wallet::coin_derivation_purpose purpose_from(jint purpose) {
-    switch(purpose) {
+    switch (purpose) {
         case 32:
             return coinninja::wallet::coin_derivation_purpose::BIP32;
         case 39:
@@ -111,22 +112,23 @@ uint8_t *as_c_byte_array(JNIEnv *env, jbyteArray array) {
 
 jbyteArray as_jbyte_array(JNIEnv *env, const std::string &native) {
     jbyteArray byteArray = env->NewByteArray(native.length());
-    env->SetByteArrayRegion(byteArray, 0, native.length(), (jbyte *) native.c_str());
+    env->SetByteArrayRegion(byteArray, 0, native.length(),
+                            reinterpret_cast<const jbyte *>(native.c_str()));
     return byteArray;
 }
 
 jbyteArray as_jbyte_array(JNIEnv *env, bc::hash_digest digest) {
     jbyteArray array = env->NewByteArray(digest.size());
-    env->SetByteArrayRegion(array, 0, digest.size(), (jbyte *) digest.data());
+    env->SetByteArrayRegion(array, 0, digest.size(),
+                            reinterpret_cast<const jbyte *>(digest.data()));
     return array;
 }
 
 jbyteArray as_jbyte_array(JNIEnv *env, data_chunk chunk) {
     jbyteArray array = env->NewByteArray(chunk.size());
-    env->SetByteArrayRegion(array, 0, chunk.size(), (jbyte *) chunk.data());
+    env->SetByteArrayRegion(array, 0, chunk.size(), reinterpret_cast<const jbyte *>(chunk.data()));
     return array;
 }
-
 
 data_chunk bytes_to_data_chunk(JNIEnv *env, jbyteArray _bytes) {
     int length = env->GetArrayLength(_bytes);
@@ -260,10 +262,11 @@ Java_app_coinninja_cn_libbitcoin_HDWallet_encryptionKeys(JNIEnv *env, jobject in
                                                          jbyteArray _publicKey) {
     using namespace coinninja::wallet;
     using namespace coinninja::encryption;
-    data_chunk data = bytes_to_data_chunk(env, _publicKey);
+    data_chunk publicKey = bytes_to_data_chunk(env, _publicKey);
     data_chunk entropy = bytes_to_data_chunk(env, _entropy);
-    encryption_cipher_keys keys = coinninja::encryption::cipher_key_vendor::encryption_cipher_keys_for_uncompressed_public_key(
-            data, entropy);
+
+    encryption_cipher_keys keys = cipher_key_vendor::encryption_cipher_keys_for_uncompressed_public_key(publicKey, entropy);
+
     jclass clazz = env->FindClass(ENCRYPTION_KEYS_CLASS);
     jmethodID constructor = env->GetMethodID(clazz, "<init>", "([B[B[B)V");
 
@@ -273,6 +276,31 @@ Java_app_coinninja_cn_libbitcoin_HDWallet_encryptionKeys(JNIEnv *env, jobject in
                           as_jbyte_array(env, keys.get_associated_public_key())
     );
 }
+
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_app_coinninja_cn_libbitcoin_HDWallet_encryptionKeysForM42(JNIEnv *env, jobject instance,
+                                                               jbyteArray _key, jint _network,
+                                                               jbyteArray _publicKey) {
+    using namespace coinninja::wallet;
+    using namespace coinninja::encryption;
+    bc::wallet::hd_private master = privateFrom(env, _key, _network);
+    data_chunk data = bytes_to_data_chunk(env, _publicKey);
+    bc::wallet::hd_private signingKey = coinninja::wallet::key_factory::signing_key(master);
+
+    encryption_cipher_keys keys = coinninja::encryption::cipher_key_vendor::encryption_cipher_keys_for_uncompressed_public_key(
+            data, signingKey);
+
+    jclass clazz = env->FindClass(ENCRYPTION_KEYS_CLASS);
+    jmethodID constructor = env->GetMethodID(clazz, "<init>", "([B[B[B)V");
+
+    return env->NewObject(clazz, constructor,
+                          as_jbyte_array(env, keys.get_encryption_key()),
+                          as_jbyte_array(env, keys.get_hmac_key()),
+                          as_jbyte_array(env, keys.get_associated_public_key())
+    );
+}
+
 
 extern "C"
 JNIEXPORT jobject JNICALL
@@ -289,6 +317,27 @@ Java_app_coinninja_cn_libbitcoin_HDWallet_decryptionKeys(JNIEnv *env, jobject in
     hd_private derivative_key{key_factory::index_private_key(master, path)};
     cipher_keys keys{
             coinninja::encryption::cipher_key_vendor::decryption_cipher_keys(derivative_key, data)};
+    jclass mclazz = env->FindClass(DECRYPTION_KEYS_CLASS);
+    jmethodID mconstructor = env->GetMethodID(mclazz, "<init>", "([B[B)V");
+    return env->NewObject(mclazz, mconstructor,
+                          as_jbyte_array(env, keys.get_encryption_key()),
+                          as_jbyte_array(env, keys.get_hmac_key()));
+}
+
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_app_coinninja_cn_libbitcoin_HDWallet_decryptionKeysForM42(JNIEnv *env, jobject instance,
+                                                               jbyteArray _key, jint _network,
+                                                               jbyteArray _publicKey) {
+    using namespace bc::wallet;
+    using namespace coinninja::wallet;
+    using namespace coinninja::encryption;
+    hd_private master = privateFrom(env, _key, _network);
+    data_chunk data = bytes_to_data_chunk(env, _publicKey);
+    bc::wallet::hd_private signingKey = coinninja::wallet::key_factory::signing_key(master);
+
+    cipher_keys keys{coinninja::encryption::cipher_key_vendor::decryption_cipher_keys(signingKey, data)};
+
     jclass mclazz = env->FindClass(DECRYPTION_KEYS_CLASS);
     jmethodID mconstructor = env->GetMethodID(mclazz, "<init>", "([B[B)V");
     return env->NewObject(mclazz, mconstructor,
@@ -325,11 +374,8 @@ Java_app_coinninja_cn_libbitcoin_AddressUtil_typeOfAddress(JNIEnv *env, jobject 
     using namespace coinninja::wallet;
     using namespace coinninja::address;
     std::string address = env->GetStringUTFChars(_address, JNI_FALSE);
-    __android_log_print(ANDROID_LOG_INFO, __FUNCTION__, "----- Address:  %s", address.c_str());
     int address_type = address_helper(base_coin(purpose_from(_purpose), cn_network_from(_network)))
             .address_type_for_address(address);
-    //env->ReleaseStringUTFChars(_address, address.c_str());
-    __android_log_print(ANDROID_LOG_INFO, __FUNCTION__, "----- Address Type:  %i", address_type);
     return address_type;
 }
 
@@ -409,7 +455,7 @@ tx_data_from_jobject(JNIEnv *env, coinninja::wallet::coin_derivation_coin networ
     uint64_t fee_amount = uint64_t_from_field_name(env, _transaction_data, tx_data_class,
                                                    "feeAmount");
     uint64_t block_height = uint64_t_from_field_name(env, _transaction_data, tx_data_class,
-                                                   "blockHeight");
+                                                     "blockHeight");
     derivation_path change_path = derivation_path_from_field(env, _transaction_data, tx_data_class,
                                                              "changePath");
     std::string payment_address = string_from_field_name(env, _transaction_data, tx_data_class,
@@ -426,7 +472,8 @@ tx_data_from_jobject(JNIEnv *env, coinninja::wallet::coin_derivation_coin networ
     }
 
     base_coin base = base_coin(utxos[0].path);
-    return {payment_address, base, utxos, amount, fee_amount, change_amount, change_path, block_height,
+    return {payment_address, base, utxos, amount, fee_amount, change_amount, change_path,
+            block_height,
             replaceable_option};
 }
 

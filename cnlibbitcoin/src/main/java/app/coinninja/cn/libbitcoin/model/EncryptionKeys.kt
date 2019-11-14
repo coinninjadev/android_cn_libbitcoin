@@ -8,6 +8,7 @@ open class EncryptionKeys(
     val hmacKey: ByteArray,
     val associatedPublicKey: ByteArray
 ) : Parcelable {
+
     constructor(parcel: Parcel) : this(
         parcel.createByteArray() ?: "".toByteArray(),
         parcel.createByteArray() ?: "".toByteArray(),

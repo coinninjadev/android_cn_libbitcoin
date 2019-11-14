@@ -9,8 +9,8 @@ def nexusPWD = System.getenv("CN_NEXUS_PWD") ? System.getenv("CN_NEXUS_PWD") : C
 
 
 def major = 1
-def minor = 2
-def patch = 8
+def minor = 3
+def patch = 3
 def currentVersion = "${major}.${minor}.${patch}"
 
 android {
@@ -105,15 +105,17 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'commons-codec:commons-codec:20041127.091804'
+    implementation "commons-codec:commons-codec:20041127.091804"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation 'org.cryptonode.jncryptor:jncryptor:1.2.0'
 
     androidTestImplementation "androidx.test.ext:junit:1.1.1"
     androidTestImplementation "androidx.test.ext:truth:1.2.0"
     androidTestImplementation "androidx.test:rules:1.2.0"
     androidTestImplementation "androidx.test:runner:1.2.0"
     androidTestImplementation 'org.mockito4kotlin:annotation:0.3.0'
-    androidTestImplementation "com.google.truth:truth:0.42"
+    androidTestImplementation 'org.mockito:mockito-android:3.1.0'
+    androidTestImplementation 'com.google.truth:truth:1.0'
     androidTestImplementation "junit:junit:4.12"
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
